@@ -11,7 +11,6 @@ import { AIReviewReportView } from './AIReviewReportView';
 import { RiskBadge, ReadinessScore } from '../common/RiskGauge';
 import {
   ArrowLeft,
-  GitPullRequest,
   ExternalLink,
   Sparkles,
   RefreshCw,
@@ -20,7 +19,9 @@ import {
   GitCommit,
   CheckCircle2,
   AlertCircle,
-  Download,
+  ChevronDown,
+  ChevronUp,
+  FileText,
 } from 'lucide-react';
 
 interface PRDetailViewProps {
@@ -38,15 +39,15 @@ export const PRDetailView: React.FC<PRDetailViewProps> = ({
   onBack,
   onOpenChatWithContext,
 }) => {
-  const [activeTab, setActiveTab] = useState<'review' | 'diff' | 'commits'>('review');
+  const [activeTab, setActiveTab] = useState<'diff' | 'review' | 'commits'>('diff');
   const [diffFiles, setDiffFiles] = useState<ParsedFileDiff[]>([]);
   const [commits, setCommits] = useState<GitHubCommit[]>([]);
   const [reviewReport, setReviewReport] = useState<AIReviewReport | null>(null);
   const [isLoadingDiff, setIsLoadingDiff] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
 
-  // Load Diff & Commits, plus any previously cached review
   useEffect(() => {
     loadPRData();
   }, [pr.number, repoFullName]);
@@ -58,36 +59,65 @@ export const PRDetailView: React.FC<PRDetailViewProps> = ({
 
     try {
       // 1. Check local IndexedDB cache for past review
-      const cachedReview = await localDb.getPRReview(`${repoFullName}#${pr.number}#${pr.head.sha}`);
+      const shaKey = pr.head?.sha || 'latest';
+      const cachedReview = await localDb.getPRReview(`${repoFullName}#${pr.number}#${shaKey}`);
       if (cachedReview) {
         setReviewReport(cachedReview.report);
       }
 
-      // 2. Fetch raw diff from GitHub
+      // 2. Fetch PR files as primary robust CORS-safe method
       let parsed: ParsedFileDiff[] = [];
       try {
-        const rawDiff = await githubClient.getPRDiff(owner, repo, pr.number);
-        parsed = parseGitDiff(rawDiff);
-      } catch (diffErr) {
-        // Try getting PR files list if raw diff fails
-        const files = await githubClient.getPRFiles(owner, repo, pr.number).catch(() => []);
-        if (files.length > 0) {
+        const files = await githubClient.getPRFiles(owner, repo, pr.number);
+        if (files && files.length > 0) {
           parsed = files.map(parseFilePatch);
+        }
+      } catch (filesErr) {
+        console.warn('getPRFiles failed, attempting raw diff fallback:', filesErr);
+      }
+
+      // 3. Fallback to raw diff if files was empty
+      if (parsed.length === 0) {
+        try {
+          const rawDiff = await githubClient.getPRDiff(owner, repo, pr.number);
+          parsed = parseGitDiff(rawDiff);
+        } catch (diffErr) {
+          console.warn('getPRDiff failed:', diffErr);
         }
       }
 
+      // 4. Fallback to demo files if offline or rate limited
       if (parsed.length === 0) {
-        // Fallback demo diff if offline/rate-limited
         parsed = getDemoDiffFiles(pr.number);
       }
+
       setDiffFiles(parsed);
 
-      // 3. Fetch commits
+      // Auto-run deterministic review if none cached yet
+      if (!cachedReview && parsed.length > 0) {
+        aiRouter
+          .reviewPR(settings, repoFullName, pr.number, pr.title, pr.body, parsed)
+          .then(async (report) => {
+            setReviewReport(report);
+            await localDb.savePRReview({
+              id: `${repoFullName}#${pr.number}#${shaKey}`,
+              repoFullName,
+              prNumber: pr.number,
+              commitSha: shaKey,
+              report,
+              savedAt: Date.now(),
+            });
+          })
+          .catch(() => {});
+      }
+
+      // 5. Fetch commits
       const commitList = await githubClient.getPRCommits(owner, repo, pr.number).catch(() => []);
       setCommits(commitList);
     } catch (e: any) {
       console.warn('Failed to load PR diff:', e);
-      setDiffFiles(getDemoDiffFiles(pr.number));
+      const demo = getDemoDiffFiles(pr.number);
+      setDiffFiles(demo);
     } finally {
       setIsLoadingDiff(false);
     }
@@ -111,11 +141,12 @@ export const PRDetailView: React.FC<PRDetailViewProps> = ({
       setActiveTab('review');
 
       // Save to local IndexedDB
+      const shaKey = pr.head?.sha || 'latest';
       await localDb.savePRReview({
-        id: `${repoFullName}#${pr.number}#${pr.head.sha}`,
+        id: `${repoFullName}#${pr.number}#${shaKey}`,
         repoFullName,
         prNumber: pr.number,
-        commitSha: pr.head.sha,
+        commitSha: shaKey,
         report,
         savedAt: Date.now(),
       });
@@ -135,10 +166,16 @@ export const PRDetailView: React.FC<PRDetailViewProps> = ({
     onOpenChatWithContext(context, pr.number);
   };
 
+  // Clean description text
+  const cleanBody = (pr.body || '')
+    .replace(/<details>[\s\S]*?<\/details>/gi, '[Release Notes and Details omitted for brevity]')
+    .replace(/<[^>]+>/g, '')
+    .trim();
+
   return (
-    <div style={{ padding: '24px', maxWidth: '1300px', margin: '0 auto', width: '100%' }}>
+    <div style={{ padding: '20px', maxWidth: '1400px', margin: '0 auto', width: '100%' }}>
       {/* Top Breadcrumb & Nav */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
         <button className="btn btn-ghost btn-sm" onClick={onBack} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <ArrowLeft size={14} />
           <span>Back to Pull Requests</span>
@@ -163,9 +200,9 @@ export const PRDetailView: React.FC<PRDetailViewProps> = ({
       </div>
 
       {/* PR Header Card */}
-      <div className="card" style={{ marginBottom: '20px' }}>
+      <div className="card" style={{ marginBottom: '16px', padding: '16px' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
-          <div style={{ flex: 1 }}>
+          <div style={{ flex: 1, minWidth: '280px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
               <span className={`badge ${pr.state === 'open' ? 'badge-success' : 'badge-info'}`}>
                 {pr.state.toUpperCase()}
@@ -173,35 +210,47 @@ export const PRDetailView: React.FC<PRDetailViewProps> = ({
               <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
                 #{pr.number}
               </span>
-              <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
-                {pr.base.ref} &larr; <code>{pr.head.ref}</code>
+              <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                {pr.base.ref} &larr; <code style={{ backgroundColor: 'var(--bg-tertiary)', padding: '1px 5px', borderRadius: '4px' }}>{pr.head.ref}</code>
               </span>
             </div>
 
-            <h1 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '8px' }}>
+            <h1 style={{ fontSize: '17px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '8px' }}>
               {pr.title}
             </h1>
 
-            {pr.body && (
-              <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5, maxHeight: '80px', overflowY: 'auto' }}>
-                {pr.body}
-              </p>
+            {cleanBody && (
+              <div style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.45 }}>
+                <p style={{ maxHeight: isDescriptionExpanded ? 'none' : '44px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {cleanBody}
+                </p>
+                {cleanBody.length > 120 && (
+                  <button
+                    className="btn btn-ghost btn-sm"
+                    onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
+                    style={{ padding: '2px 0', fontSize: '11px', color: 'var(--accent-primary)', marginTop: '2px' }}
+                  >
+                    {isDescriptionExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                    <span>{isDescriptionExpanded ? 'Show less' : 'Read full description'}</span>
+                  </button>
+                )}
+              </div>
             )}
           </div>
 
           {/* Action Trigger */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
             <button
               className="btn btn-primary"
               onClick={handleRunAIReview}
               disabled={isAnalyzing || isLoadingDiff}
-              style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', fontSize: '13px' }}
+              style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '7px 14px', fontSize: '13px' }}
             >
-              <Sparkles size={16} className={isAnalyzing ? 'spin' : ''} />
+              <Sparkles size={15} className={isAnalyzing ? 'spin' : ''} />
               <span>{isAnalyzing ? 'Analyzing Diff...' : reviewReport ? 'Re-Run AI Review' : 'Run AI Code Review'}</span>
             </button>
             <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-              Provider: {settings.activeProvider === 'deterministic' ? 'Deterministic AST ($0)' : settings.activeProvider}
+              Provider: <strong>{settings.activeProvider === 'deterministic' ? 'Deterministic AST ($0)' : settings.activeProvider}</strong>
             </div>
           </div>
         </div>
@@ -210,32 +259,32 @@ export const PRDetailView: React.FC<PRDetailViewProps> = ({
         {reviewReport && (
           <div
             style={{
-              marginTop: '16px',
-              paddingTop: '12px',
+              marginTop: '12px',
+              paddingTop: '10px',
               borderTop: '1px solid var(--border-subtle)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
               flexWrap: 'wrap',
-              gap: '12px',
+              gap: '10px',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <RiskBadge risk={reviewReport.overallRisk} />
               <ReadinessScore score={reviewReport.mergeReadinessScore} />
               <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                {reviewReport.findings.length} findings identified
+                {reviewReport.findings.length} findings
               </span>
             </div>
 
-            <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
               Model: <strong>{reviewReport.model}</strong>
             </div>
           </div>
         )}
       </div>
 
-      {/* Tabs */}
+      {/* Prominent Tab Navigation */}
       <div
         style={{
           display: 'flex',
@@ -246,32 +295,38 @@ export const PRDetailView: React.FC<PRDetailViewProps> = ({
         }}
       >
         <button
-          className={`btn ${activeTab === 'review' ? 'btn-secondary' : 'btn-ghost'}`}
-          onClick={() => setActiveTab('review')}
-          style={{
-            borderRadius: 'var(--radius-md) var(--radius-md) 0 0',
-            borderBottom: activeTab === 'review' ? '2px solid var(--accent-primary)' : '2px solid transparent',
-          }}
-        >
-          <Sparkles size={14} style={{ color: 'var(--accent-primary)' }} />
-          <span>AI Review Report</span>
-          {reviewReport && (
-            <span className="badge badge-neutral" style={{ fontSize: '10px' }}>
-              {reviewReport.findings.length}
-            </span>
-          )}
-        </button>
-
-        <button
           className={`btn ${activeTab === 'diff' ? 'btn-secondary' : 'btn-ghost'}`}
           onClick={() => setActiveTab('diff')}
           style={{
             borderRadius: 'var(--radius-md) var(--radius-md) 0 0',
             borderBottom: activeTab === 'diff' ? '2px solid var(--accent-primary)' : '2px solid transparent',
+            padding: '8px 14px',
+            fontSize: '13px',
+            fontWeight: activeTab === 'diff' ? 600 : 500,
           }}
         >
-          <FileCode size={14} />
-          <span>Files Changed ({diffFiles.length})</span>
+          <FileCode size={15} style={{ color: activeTab === 'diff' ? 'var(--accent-primary)' : 'var(--text-muted)' }} />
+          <span>Files Changed & Diff ({diffFiles.length})</span>
+        </button>
+
+        <button
+          className={`btn ${activeTab === 'review' ? 'btn-secondary' : 'btn-ghost'}`}
+          onClick={() => setActiveTab('review')}
+          style={{
+            borderRadius: 'var(--radius-md) var(--radius-md) 0 0',
+            borderBottom: activeTab === 'review' ? '2px solid var(--accent-primary)' : '2px solid transparent',
+            padding: '8px 14px',
+            fontSize: '13px',
+            fontWeight: activeTab === 'review' ? 600 : 500,
+          }}
+        >
+          <Sparkles size={15} style={{ color: 'var(--accent-primary)' }} />
+          <span>AI Review Analysis</span>
+          {reviewReport && (
+            <span className={`badge ${reviewReport.findings.length > 0 ? 'badge-warning' : 'badge-success'}`} style={{ fontSize: '10px', padding: '1px 6px' }}>
+              {reviewReport.findings.length}
+            </span>
+          )}
         </button>
 
         <button
@@ -280,9 +335,12 @@ export const PRDetailView: React.FC<PRDetailViewProps> = ({
           style={{
             borderRadius: 'var(--radius-md) var(--radius-md) 0 0',
             borderBottom: activeTab === 'commits' ? '2px solid var(--accent-primary)' : '2px solid transparent',
+            padding: '8px 14px',
+            fontSize: '13px',
+            fontWeight: activeTab === 'commits' ? 600 : 500,
           }}
         >
-          <GitCommit size={14} />
+          <GitCommit size={15} />
           <span>Commits ({commits.length})</span>
         </button>
       </div>
@@ -291,17 +349,25 @@ export const PRDetailView: React.FC<PRDetailViewProps> = ({
       {isLoadingDiff ? (
         <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-muted)' }}>
           <RefreshCw size={24} className="spin" style={{ margin: '0 auto 12px' }} />
-          <p>Parsing git diff hunks and file trees...</p>
+          <p>Loading diff hunks and file changes...</p>
         </div>
       ) : (
         <>
+          {activeTab === 'diff' && (
+            <DiffViewer
+              files={diffFiles}
+              lineComments={reviewReport?.lineComments || []}
+              defaultViewMode={settings.diffViewMode}
+            />
+          )}
+
           {activeTab === 'review' && (
             reviewReport ? (
               <AIReviewReportView report={reviewReport} />
             ) : (
               <div className="card" style={{ padding: '48px', textAlign: 'center', color: 'var(--text-muted)' }}>
                 <Sparkles size={36} style={{ margin: '0 auto 12px', color: 'var(--accent-primary)' }} />
-                <h3>No AI Review Generated Yet</h3>
+                <h3>No AI Review Report Generated Yet</h3>
                 <p style={{ fontSize: '13px', marginTop: '6px', maxWidth: '500px', margin: '6px auto 16px' }}>
                   Click "Run AI Code Review" above to run an automated multi-vector analysis across security, performance, bug risks, edge cases, and suggested line comments.
                 </p>
@@ -313,20 +379,12 @@ export const PRDetailView: React.FC<PRDetailViewProps> = ({
             )
           )}
 
-          {activeTab === 'diff' && (
-            <DiffViewer
-              files={diffFiles}
-              lineComments={reviewReport?.lineComments || []}
-              defaultViewMode={settings.diffViewMode}
-            />
-          )}
-
           {activeTab === 'commits' && (
             <div className="card" style={{ padding: '16px' }}>
               <h3 style={{ fontSize: '14px', marginBottom: '12px' }}>Commits in this Pull Request</h3>
               {commits.length === 0 ? (
                 <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>
-                  Single commit PR ({pr.head.sha.slice(0, 7)}: {pr.title})
+                  Commit {pr.head?.sha?.slice(0, 7) || 'HEAD'}: {pr.title}
                 </p>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -397,46 +455,17 @@ index 893ab42..984fc21 100644
 +    }
    }
 +
-+  private async performRefresh(token: string): Promise<string> {
-+    const res = await fetch('/api/auth/refresh', {
-+      method: 'POST',
-+      headers: { 'Content-Type': 'application/json' },
-+      body: JSON.stringify({ token }),
-+    });
-+    if (!res.ok) throw new Error('Token rotation failed');
-+    const data = await res.json();
-+    return data.accessToken;
-+  }
- }
-diff --git a/src/middleware/rateLimiter.ts b/src/middleware/rateLimiter.ts
-new file mode 100644
-index 0000000..fe4567a
---- /dev/null
-+++ b/src/middleware/rateLimiter.ts
-@@ -0,0 +1,18 @@
-+import { Request, Response, NextFunction } from 'express';
-+
-+const hitMap = new Map<string, { count: number; resetAt: number }>();
-+
-+export function rateLimiter(maxHits = 100, windowMs = 60000) {
-+  return (req: Request, res: Response, next: NextFunction) => {
-+    const ip = req.ip || 'anonymous';
-+    const now = Date.now();
-+    const record = hitMap.get(ip) || { count: 0, resetAt: now + windowMs };
-+
-+    if (now > record.resetAt) {
-+      record.count = 0;
-+      record.resetAt = now + windowMs;
-+    }
-+
-+    record.count++;
-+    hitMap.set(ip, record);
-+    if (record.count > maxHits) {
-+      return res.status(429).json({ error: 'Too many requests. Please try again later.' });
-+    }
-+    next();
-+  };
-+}`;
+   private async performRefresh(token: string): Promise<string> {
+     const res = await fetch('/api/auth/refresh', {
+       method: 'POST',
+       headers: { 'Content-Type': 'application/json' },
+       body: JSON.stringify({ token }),
+     });
+     if (!res.ok) throw new Error('Token rotation failed');
+     const data = await res.json();
+     return data.accessToken;
+   }
+ }`;
 
   return parseGitDiff(rawDiff);
 }

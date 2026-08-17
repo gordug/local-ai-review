@@ -1,0 +1,16 @@
+name: revflow-local
+region: nyc
+static_sites:
+  - name: revflow-web
+    build_command: npm run build
+    output_dir: dist
+    catchall_document: index.html
+    error_document: index.html
+    github:
+      branch: main
+      deploy_on_push: true
+      repo: gordug/local-ai-review
+    http_paths:
+      - /
+    routes:
+      - path: /
