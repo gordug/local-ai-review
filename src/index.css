@@ -364,6 +364,7 @@ code, pre, .font-mono {
 .diff-line {
   display: flex;
   width: 100%;
+  min-width: max-content;
 }
 
 .diff-line:hover {
@@ -371,20 +372,23 @@ code, pre, .font-mono {
 }
 
 .diff-line-num {
-  width: 44px;
-  min-width: 44px;
+  width: 40px;
+  min-width: 40px;
   padding: 0 6px;
   text-align: right;
   color: var(--text-muted);
   user-select: none;
   font-size: 11px;
+  border-right: 1px solid var(--border-subtle);
 }
 
 .diff-line-content {
   flex: 1;
-  padding: 0 8px;
-  white-space: pre-wrap;
-  word-break: break-all;
+  padding: 0 10px;
+  white-space: pre;
+  word-break: normal;
+  font-family: var(--font-mono);
+  font-size: 12px;
 }
 
 .diff-line-add {
@@ -407,9 +411,11 @@ code, pre, .font-mono {
   background-color: var(--diff-hunk-bg);
   color: var(--diff-hunk-text);
   font-size: 11px;
+  font-family: var(--font-mono);
   padding: 4px 12px;
   border-top: 1px solid var(--border-subtle);
   border-bottom: 1px solid var(--border-subtle);
+  min-width: max-content;
 }
 
 /* Modals & Dialogs */

@@ -12,6 +12,7 @@ import {
   AlignLeft,
   ChevronDown,
   ChevronRight,
+  ChevronLeft,
   ShieldAlert,
   AlertTriangle,
   Lightbulb,
@@ -34,9 +35,9 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({
 
   if (!files || files.length === 0) {
     return (
-      <div className="card" style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-muted)' }}>
-        <FileCode size={32} style={{ margin: '0 auto 12px', opacity: 0.5 }} />
-        <p>No changed files or diff data available for this pull request.</p>
+      <div className="card" style={{ textAlign: 'center', padding: '36px 16px', color: 'var(--text-muted)' }}>
+        <FileCode size={28} style={{ margin: '0 auto 10px', opacity: 0.5 }} />
+        <p style={{ fontSize: '13px' }}>No changed files or diff data available for this pull request.</p>
       </div>
     );
   }
@@ -61,12 +62,12 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({
       <style>{`
         .diff-viewer-wrapper {
           display: flex;
-          gap: 16px;
-          min-height: 500px;
+          gap: 14px;
+          min-height: 480px;
         }
         .diff-file-sidebar {
-          width: 260px;
-          min-width: 260px;
+          width: 250px;
+          min-width: 250px;
         }
         .diff-main-content {
           flex: 1;
@@ -77,17 +78,18 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({
         @media (max-width: 768px) {
           .diff-viewer-wrapper {
             flex-direction: column;
-            gap: 12px;
+            gap: 8px;
           }
           .diff-file-sidebar {
+            display: none !important;
+          }
+          .diff-main-content {
             width: 100% !important;
-            min-width: 100% !important;
-            max-height: 160px;
           }
         }
       `}</style>
 
-      {/* File Tree / Sidebar */}
+      {/* Desktop File Tree / Sidebar */}
       <div
         className="diff-file-sidebar"
         style={{
@@ -174,21 +176,55 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({
 
       {/* Main Diff Content */}
       <div className="diff-main-content">
+        {/* Mobile Compact File Navigation */}
+        <div className="mobile-only" style={{ marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <button
+            className="btn btn-secondary btn-sm"
+            onClick={() => setSelectedFileIndex((prev) => Math.max(0, prev - 1))}
+            disabled={selectedFileIndex === 0}
+            style={{ padding: '6px 8px' }}
+            title="Previous file"
+          >
+            <ChevronLeft size={14} />
+          </button>
+          <select
+            className="select"
+            value={selectedFileIndex}
+            onChange={(e) => setSelectedFileIndex(Number(e.target.value))}
+            style={{ flex: 1, fontSize: '11px', padding: '4px 8px', height: '32px', minWidth: 0 }}
+          >
+            {files.map((file, idx) => (
+              <option key={file.filename} value={idx}>
+                [{idx + 1}/{files.length}] {file.filename} (+{file.additions}/-{file.deletions})
+              </option>
+            ))}
+          </select>
+          <button
+            className="btn btn-secondary btn-sm"
+            onClick={() => setSelectedFileIndex((prev) => Math.min(files.length - 1, prev + 1))}
+            disabled={selectedFileIndex === files.length - 1}
+            style={{ padding: '6px 8px' }}
+            title="Next file"
+          >
+            <ChevronRight size={14} />
+          </button>
+        </div>
+
         {/* Controls Bar */}
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            marginBottom: '10px',
+            marginBottom: '8px',
             flexWrap: 'wrap',
-            gap: '8px',
+            gap: '6px',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden', minWidth: 0, flex: 1 }}>
             <span
               style={{
-                fontSize: '13px',
+                fontSize: '12px',
                 fontWeight: 600,
                 color: 'var(--text-primary)',
                 fontFamily: 'var(--font-mono)',
@@ -200,12 +236,12 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({
             >
               {activeFile.filename}
             </span>
-            <span className={`badge ${activeFile.status === 'added' ? 'badge-success' : activeFile.status === 'removed' ? 'badge-danger' : 'badge-neutral'}`} style={{ fontSize: '10px' }}>
+            <span className={`badge ${activeFile.status === 'added' ? 'badge-success' : activeFile.status === 'removed' ? 'badge-danger' : 'badge-neutral'}`} style={{ fontSize: '9px', padding: '1px 5px' }}>
               {activeFile.status}
             </span>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <div
               style={{
                 display: 'flex',
@@ -217,7 +253,7 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({
             >
               <button
                 className={`btn btn-sm hide-on-mobile ${viewMode === 'split' ? 'btn-secondary' : 'btn-ghost'}`}
-                style={{ padding: '3px 8px', fontSize: '11px' }}
+                style={{ padding: '2px 7px', fontSize: '11px' }}
                 onClick={() => setViewMode('split')}
                 title="Split side-by-side diff"
               >
@@ -226,7 +262,7 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({
               </button>
               <button
                 className={`btn btn-sm ${viewMode === 'unified' ? 'btn-secondary' : 'btn-ghost'}`}
-                style={{ padding: '3px 8px', fontSize: '11px' }}
+                style={{ padding: '2px 7px', fontSize: '11px' }}
                 onClick={() => setViewMode('unified')}
                 title="Unified diff"
               >
@@ -247,15 +283,16 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({
             border: '1px solid var(--border-subtle)',
             borderRadius: 'var(--radius-lg)',
             WebkitOverflowScrolling: 'touch',
+            maxHeight: '650px',
           }}
         >
           {activeFile.hunks.length === 0 ? (
-            <div style={{ padding: '32px', textAlign: 'center', color: 'var(--text-muted)' }}>
-              <p>No text diff hunks available (binary file or empty diff).</p>
+            <div style={{ padding: '28px', textAlign: 'center', color: 'var(--text-muted)' }}>
+              <p style={{ fontSize: '12px' }}>No text diff hunks available (binary file or empty diff).</p>
             </div>
           ) : (
             activeFile.hunks.map((hunk, hunkIdx) => (
-              <div key={hunkIdx} style={{ marginBottom: '6px' }}>
+              <div key={hunkIdx} style={{ marginBottom: '4px' }}>
                 <div className="diff-line-hunk">{hunk.header}</div>
 
                 {viewMode === 'unified' ? (
@@ -301,13 +338,13 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({
 
                       return (
                         <React.Fragment key={rowIdx}>
-                          <div style={{ display: 'flex', width: '100%', borderBottom: '1px solid var(--border-subtle)' }}>
+                          <div style={{ display: 'flex', width: '100%', minWidth: 'max-content', borderBottom: '1px solid var(--border-subtle)' }}>
                             {/* Left Side */}
                             <div
                               style={{
                                 flex: 1,
                                 display: 'flex',
-                                minWidth: 0,
+                                minWidth: '320px',
                                 borderRight: '1px solid var(--border-subtle)',
                                 backgroundColor: row.left?.type === 'delete' ? 'var(--diff-del-bg)' : 'transparent',
                                 color: row.left?.type === 'delete' ? 'var(--diff-del-text)' : 'inherit',
@@ -316,7 +353,7 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({
                               <div className="diff-line-num" style={{ backgroundColor: row.left?.type === 'delete' ? 'var(--diff-del-line)' : 'transparent' }}>
                                 {row.left?.oldLineNumber || ''}
                               </div>
-                              <div className="diff-line-content" style={{ overflowX: 'auto' }}>
+                              <div className="diff-line-content">
                                 {row.left ? (row.left.type === 'delete' ? '- ' : '  ') + row.left.content : ''}
                               </div>
                             </div>
@@ -326,7 +363,7 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({
                               style={{
                                 flex: 1,
                                 display: 'flex',
-                                minWidth: 0,
+                                minWidth: '320px',
                                 backgroundColor: row.right?.type === 'add' ? 'var(--diff-add-bg)' : 'transparent',
                                 color: row.right?.type === 'add' ? 'var(--diff-add-text)' : 'inherit',
                               }}
@@ -334,7 +371,7 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({
                               <div className="diff-line-num" style={{ backgroundColor: row.right?.type === 'add' ? 'var(--diff-add-line)' : 'transparent' }}>
                                 {row.right?.newLineNumber || ''}
                               </div>
-                              <div className="diff-line-content" style={{ overflowX: 'auto' }}>
+                              <div className="diff-line-content">
                                 {row.right ? (row.right.type === 'add' ? '+ ' : '  ') + row.right.content : ''}
                               </div>
                             </div>
@@ -370,29 +407,37 @@ interface InlineCommentCardProps {
 }
 
 const InlineCommentCard: React.FC<InlineCommentCardProps> = ({ comment, onCopy, isCopied }) => {
-  const isCritical = comment.severity === 'critical' || comment.severity === 'high';
-
   return (
     <div
       style={{
         margin: '6px 12px',
-        padding: '10px 12px',
+        padding: '10px 14px',
         borderRadius: 'var(--radius-md)',
-        backgroundColor: isCritical ? 'rgba(239, 68, 68, 0.08)' : 'var(--bg-tertiary)',
-        border: `1px solid ${isCritical ? 'var(--danger-border)' : 'var(--border-default)'}`,
-        fontSize: '12px',
+        backgroundColor: 'var(--bg-tertiary)',
+        borderLeft: `4px solid ${
+          comment.severity === 'critical' || comment.severity === 'high'
+            ? 'var(--danger-text)'
+            : comment.severity === 'medium'
+            ? 'var(--warning-text)'
+            : 'var(--accent-primary)'
+        }`,
+        boxShadow: 'var(--shadow-sm)',
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px', flexWrap: 'wrap', gap: '6px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          {isCritical ? (
+          {comment.severity === 'critical' || comment.severity === 'high' ? (
             <ShieldAlert size={14} style={{ color: 'var(--danger-text)' }} />
+          ) : comment.severity === 'medium' ? (
+            <AlertTriangle size={14} style={{ color: 'var(--warning-text)' }} />
           ) : (
-            <Lightbulb size={14} style={{ color: 'var(--warning-text)' }} />
+            <Lightbulb size={14} style={{ color: 'var(--accent-primary)' }} />
           )}
-          <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{comment.author}</span>
-          <span className={`badge ${isCritical ? 'badge-danger' : 'badge-warning'}`} style={{ fontSize: '10px', textTransform: 'uppercase' }}>
-            {comment.category} • {comment.severity}
+          <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-primary)' }}>
+            {comment.author}
+          </span>
+          <span className={`badge ${comment.severity === 'critical' || comment.severity === 'high' ? 'badge-danger' : 'badge-warning'}`} style={{ fontSize: '9px', padding: '0 4px' }}>
+            {comment.category}
           </span>
         </div>
 
@@ -400,32 +445,36 @@ const InlineCommentCard: React.FC<InlineCommentCardProps> = ({ comment, onCopy, 
           className="btn btn-ghost btn-sm"
           onClick={onCopy}
           style={{ padding: '2px 6px', fontSize: '11px' }}
-          title="Copy markdown comment for GitHub"
+          title="Copy comment text"
         >
           {isCopied ? <Check size={12} style={{ color: 'var(--success-text)' }} /> : <Copy size={12} />}
           <span>{isCopied ? 'Copied' : 'Copy'}</span>
         </button>
       </div>
 
-      <div style={{ color: 'var(--text-primary)', whiteSpace: 'pre-wrap', lineHeight: 1.4 }}>
+      <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.45, margin: '4px 0' }}>
         {comment.body}
-      </div>
+      </p>
 
       {comment.suggestedCode && (
-        <div
-          style={{
-            marginTop: '8px',
-            padding: '6px 10px',
-            backgroundColor: 'var(--bg-secondary)',
-            borderRadius: 'var(--radius-sm)',
-            border: '1px solid var(--border-subtle)',
-            fontFamily: 'var(--font-mono)',
-            fontSize: '11px',
-            color: 'var(--success-text)',
-          }}
-        >
-          <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginBottom: '2px' }}>Suggested Replacement:</div>
-          {comment.suggestedCode}
+        <div style={{ marginTop: '6px' }}>
+          <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginBottom: '2px', fontWeight: 500 }}>
+            SUGGESTED REPLACEMENT
+          </div>
+          <pre
+            style={{
+              backgroundColor: 'var(--bg-primary)',
+              padding: '6px 10px',
+              borderRadius: 'var(--radius-sm)',
+              fontSize: '11px',
+              fontFamily: 'var(--font-mono)',
+              overflowX: 'auto',
+              color: 'var(--success-text)',
+              border: '1px solid var(--border-subtle)',
+            }}
+          >
+            <code>{comment.suggestedCode}</code>
+          </pre>
         </div>
       )}
     </div>

@@ -178,66 +178,110 @@ export const PRDetailView: React.FC<PRDetailViewProps> = ({
     .trim();
 
   return (
-    <div style={{ padding: '20px', maxWidth: '1400px', margin: '0 auto', width: '100%' }}>
+    <div className="pr-detail-view-container">
+      <style>{`
+        .pr-detail-view-container {
+          padding: 16px 20px;
+          max-width: 1400px;
+          margin: 0 auto;
+          width: 100%;
+        }
+        .pr-header-card {
+          margin-bottom: 14px;
+          padding: 16px;
+        }
+        .pr-tabs-container {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          border-bottom: 1px solid var(--border-subtle);
+          margin-bottom: 14px;
+          overflow-x: auto;
+          white-space: nowrap;
+          flex-wrap: nowrap;
+          padding-bottom: 2px;
+          -webkit-overflow-scrolling: touch;
+        }
+        .pr-tab-btn {
+          flex-shrink: 0;
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 7px 12px;
+          font-size: 12px;
+          border-radius: var(--radius-md) var(--radius-md) 0 0;
+          cursor: pointer;
+        }
+        @media (max-width: 768px) {
+          .pr-detail-view-container {
+            padding: 10px 8px !important;
+          }
+          .pr-header-card {
+            padding: 12px 10px !important;
+            margin-bottom: 10px !important;
+          }
+        }
+      `}</style>
+
       {/* Top Breadcrumb & Nav */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
-        <button className="btn btn-ghost btn-sm" onClick={onBack} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px', flexWrap: 'wrap', gap: '6px' }}>
+        <button className="btn btn-ghost btn-sm" onClick={onBack} style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '4px 8px' }}>
           <ArrowLeft size={14} />
-          <span>Back to Pull Requests</span>
+          <span>PRs</span>
         </button>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <button className="btn btn-secondary btn-sm" onClick={handleOpenChat} title="Chat about this PR">
-            <MessageSquare size={14} />
-            <span className="hide-on-compact">Chat about this PR</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <button className="btn btn-secondary btn-sm" onClick={handleOpenChat} title="Chat about this PR" style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+            <MessageSquare size={13} />
+            <span className="hide-on-compact">Chat</span>
           </button>
           <a
             href={pr.html_url}
             target="_blank"
             rel="noreferrer"
             className="btn btn-ghost btn-sm"
-            style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+            style={{ display: 'flex', alignItems: 'center', gap: '5px' }}
             title="Open on GitHub"
           >
-            <span className="hide-on-compact">GitHub PR #{pr.number}</span>
+            <span className="hide-on-compact">GitHub #{pr.number}</span>
             <ExternalLink size={13} />
           </a>
         </div>
       </div>
 
       {/* PR Header Card */}
-      <div className="card" style={{ marginBottom: '16px', padding: '16px' }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
-          <div style={{ flex: 1, minWidth: '280px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-              <span className={`badge ${pr.state === 'open' ? 'badge-success' : 'badge-info'}`}>
+      <div className="card pr-header-card">
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
+          <div style={{ flex: 1, minWidth: '220px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px', flexWrap: 'wrap' }}>
+              <span className={`badge ${pr.state === 'open' ? 'badge-success' : 'badge-info'}`} style={{ fontSize: '10px', padding: '1px 5px' }}>
                 {pr.state.toUpperCase()}
               </span>
-              <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
                 #{pr.number}
               </span>
-              <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                {pr.base.ref} &larr; <code style={{ backgroundColor: 'var(--bg-tertiary)', padding: '1px 5px', borderRadius: '4px' }}>{pr.head.ref}</code>
+              <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                {pr.base.ref} &larr; <code style={{ backgroundColor: 'var(--bg-tertiary)', padding: '1px 4px', borderRadius: '4px', fontSize: '11px', wordBreak: 'break-all' }}>{pr.head.ref}</code>
               </span>
             </div>
 
-            <h1 style={{ fontSize: '17px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '8px' }}>
+            <h1 style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '6px', lineHeight: 1.3 }}>
               {pr.title}
             </h1>
 
             {cleanBody && (
-              <div style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.45 }}>
-                <p style={{ maxHeight: isDescriptionExpanded ? 'none' : '44px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              <div style={{ fontSize: '11px', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                <p style={{ maxHeight: isDescriptionExpanded ? 'none' : '36px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {cleanBody}
                 </p>
-                {cleanBody.length > 120 && (
+                {cleanBody.length > 90 && (
                   <button
                     className="btn btn-ghost btn-sm"
                     onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
                     style={{ padding: '2px 0', fontSize: '11px', color: 'var(--accent-primary)', marginTop: '2px' }}
                   >
-                    {isDescriptionExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-                    <span>{isDescriptionExpanded ? 'Show less' : 'Read full description'}</span>
+                    {isDescriptionExpanded ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
+                    <span>{isDescriptionExpanded ? 'Show less' : 'Read description'}</span>
                   </button>
                 )}
               </div>
@@ -245,19 +289,27 @@ export const PRDetailView: React.FC<PRDetailViewProps> = ({
           </div>
 
           {/* Action Trigger */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
             <button
-              className="btn btn-primary"
+              className="btn btn-primary btn-sm"
               onClick={handleRunAIReview}
               disabled={isAnalyzing || isLoadingDiff}
-              style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '7px 14px', fontSize: '13px' }}
+              style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 12px', fontSize: '12px' }}
             >
-              <Sparkles size={15} className={isAnalyzing ? 'spin' : ''} />
-              <span>{isAnalyzing ? 'Analyzing Diff...' : reviewReport ? 'Re-Run AI Review' : 'Run AI Code Review'}</span>
+              <Sparkles size={14} className={isAnalyzing ? 'spin' : ''} />
+              <span>{isAnalyzing ? 'Analyzing...' : reviewReport ? 'Re-Run Review' : 'Run AI Review'}</span>
             </button>
-            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-              Provider: <strong>{settings.activeProvider === 'deterministic' ? 'Deterministic AST ($0)' : settings.activeProvider}</strong>
-            </div>
+            {reviewReport && (
+              <button
+                className="btn btn-secondary btn-sm"
+                onClick={() => setIsSubmitModalOpen(true)}
+                style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '5px 10px', fontSize: '12px' }}
+                title="Submit Review to GitHub"
+              >
+                <Send size={13} />
+                <span className="hide-on-compact">Submit to GitHub</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -265,20 +317,20 @@ export const PRDetailView: React.FC<PRDetailViewProps> = ({
         {reviewReport && (
           <div
             style={{
-              marginTop: '12px',
-              paddingTop: '10px',
+              marginTop: '10px',
+              paddingTop: '8px',
               borderTop: '1px solid var(--border-subtle)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
               flexWrap: 'wrap',
-              gap: '10px',
+              gap: '8px',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
               <RiskBadge risk={reviewReport.overallRisk} />
               <ReadinessScore score={reviewReport.mergeReadinessScore} />
-              <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
                 {reviewReport.findings.length} findings
               </span>
             </div>
@@ -290,72 +342,55 @@ export const PRDetailView: React.FC<PRDetailViewProps> = ({
         )}
       </div>
 
-      {/* Prominent Tab Navigation */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          borderBottom: '1px solid var(--border-subtle)',
-          marginBottom: '16px',
-        }}
-      >
+      {/* Prominent Tab Navigation (Smooth Horizontal Swipeable on Mobile) */}
+      <div className="pr-tabs-container">
         <button
-          className={`btn ${activeTab === 'diff' ? 'btn-secondary' : 'btn-ghost'}`}
+          className={`pr-tab-btn ${activeTab === 'diff' ? 'btn-secondary' : 'btn-ghost'}`}
           onClick={() => setActiveTab('diff')}
           style={{
-            borderRadius: 'var(--radius-md) var(--radius-md) 0 0',
             borderBottom: activeTab === 'diff' ? '2px solid var(--accent-primary)' : '2px solid transparent',
-            padding: '8px 14px',
-            fontSize: '13px',
             fontWeight: activeTab === 'diff' ? 600 : 500,
           }}
         >
-          <FileCode size={15} style={{ color: activeTab === 'diff' ? 'var(--accent-primary)' : 'var(--text-muted)' }} />
-          <span>Files Changed & Diff ({diffFiles.length})</span>
+          <FileCode size={14} style={{ color: activeTab === 'diff' ? 'var(--accent-primary)' : 'var(--text-muted)' }} />
+          <span>Files & Diff ({diffFiles.length})</span>
         </button>
 
         <button
-          className={`btn ${activeTab === 'review' ? 'btn-secondary' : 'btn-ghost'}`}
+          className={`pr-tab-btn ${activeTab === 'review' ? 'btn-secondary' : 'btn-ghost'}`}
           onClick={() => setActiveTab('review')}
           style={{
-            borderRadius: 'var(--radius-md) var(--radius-md) 0 0',
             borderBottom: activeTab === 'review' ? '2px solid var(--accent-primary)' : '2px solid transparent',
-            padding: '8px 14px',
-            fontSize: '13px',
             fontWeight: activeTab === 'review' ? 600 : 500,
           }}
         >
-          <Sparkles size={15} style={{ color: 'var(--accent-primary)' }} />
+          <Sparkles size={14} style={{ color: 'var(--accent-primary)' }} />
           <span>AI Review Analysis</span>
           {reviewReport && (
-            <span className={`badge ${reviewReport.findings.length > 0 ? 'badge-warning' : 'badge-success'}`} style={{ fontSize: '10px', padding: '1px 6px' }}>
+            <span className={`badge ${reviewReport.findings.length > 0 ? 'badge-warning' : 'badge-success'}`} style={{ fontSize: '9px', padding: '0 5px' }}>
               {reviewReport.findings.length}
             </span>
           )}
         </button>
 
         <button
-          className={`btn ${activeTab === 'commits' ? 'btn-secondary' : 'btn-ghost'}`}
+          className={`pr-tab-btn ${activeTab === 'commits' ? 'btn-secondary' : 'btn-ghost'}`}
           onClick={() => setActiveTab('commits')}
           style={{
-            borderRadius: 'var(--radius-md) var(--radius-md) 0 0',
             borderBottom: activeTab === 'commits' ? '2px solid var(--accent-primary)' : '2px solid transparent',
-            padding: '8px 14px',
-            fontSize: '13px',
             fontWeight: activeTab === 'commits' ? 600 : 500,
           }}
         >
-          <GitCommit size={15} />
+          <GitCommit size={14} />
           <span>Commits ({commits.length})</span>
         </button>
       </div>
 
       {/* Tab Content */}
       {isLoadingDiff ? (
-        <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-muted)' }}>
-          <RefreshCw size={24} className="spin" style={{ margin: '0 auto 12px' }} />
-          <p>Loading diff hunks and file changes...</p>
+        <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
+          <RefreshCw size={22} className="spin" style={{ margin: '0 auto 10px' }} />
+          <p style={{ fontSize: '12px' }}>Loading diff hunks and file changes...</p>
         </div>
       ) : (
         <>
@@ -374,14 +409,14 @@ export const PRDetailView: React.FC<PRDetailViewProps> = ({
                 onOpenSubmitModal={() => setIsSubmitModalOpen(true)}
               />
             ) : (
-              <div className="card" style={{ padding: '48px', textAlign: 'center', color: 'var(--text-muted)' }}>
-                <Sparkles size={36} style={{ margin: '0 auto 12px', color: 'var(--accent-primary)' }} />
+              <div className="card" style={{ padding: '36px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                <Sparkles size={32} style={{ margin: '0 auto 10px', color: 'var(--accent-primary)' }} />
                 <h3>No AI Review Report Generated Yet</h3>
-                <p style={{ fontSize: '13px', marginTop: '6px', maxWidth: '500px', margin: '6px auto 16px' }}>
-                  Click "Run AI Code Review" above to run an automated multi-vector analysis across security, performance, bug risks, edge cases, and suggested line comments.
+                <p style={{ fontSize: '12px', marginTop: '4px', maxWidth: '440px', margin: '4px auto 14px' }}>
+                  Click "Run AI Review" above to run an automated multi-vector analysis across security, performance, bug risks, edge cases, and suggested line comments.
                 </p>
-                <button className="btn btn-primary" onClick={handleRunAIReview} disabled={isAnalyzing}>
-                  <Sparkles size={14} />
+                <button className="btn btn-primary btn-sm" onClick={handleRunAIReview} disabled={isAnalyzing}>
+                  <Sparkles size={13} />
                   <span>Run AI Code Review Now</span>
                 </button>
               </div>
@@ -389,33 +424,36 @@ export const PRDetailView: React.FC<PRDetailViewProps> = ({
           )}
 
           {activeTab === 'commits' && (
-            <div className="card" style={{ padding: '16px' }}>
-              <h3 style={{ fontSize: '14px', marginBottom: '12px' }}>Commits in this Pull Request</h3>
+            <div className="card" style={{ padding: '14px' }}>
+              <h3 style={{ fontSize: '13px', marginBottom: '10px' }}>Commits in this Pull Request</h3>
               {commits.length === 0 ? (
-                <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>
+                <p style={{ color: 'var(--text-muted)', fontSize: '12px' }}>
                   Commit {pr.head?.sha?.slice(0, 7) || 'HEAD'}: {pr.title}
                 </p>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   {commits.map((c) => (
                     <div
                       key={c.sha}
                       style={{
-                        padding: '10px 14px',
+                        padding: '8px 12px',
                         backgroundColor: 'var(--bg-tertiary)',
                         borderRadius: 'var(--radius-md)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
+                        gap: '10px',
                       }}
                     >
-                      <div>
-                        <div style={{ fontWeight: 600, fontSize: '13px' }}>{c.commit.message}</div>
-                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontWeight: 600, fontSize: '12px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {c.commit.message}
+                        </div>
+                        <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>
                           {c.commit.author.name} • {new Date(c.commit.author.date).toLocaleDateString()}
                         </div>
                       </div>
-                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--accent-primary)' }}>
+                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--accent-primary)', flexShrink: 0 }}>
                         {c.sha.slice(0, 7)}
                       </span>
                     </div>
