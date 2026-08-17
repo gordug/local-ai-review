@@ -215,29 +215,50 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        top: '56px',
-        right: 0,
-        bottom: 0,
-        width: '420px',
-        maxWidth: '100vw',
-        backgroundColor: 'var(--bg-secondary)',
-        borderLeft: '1px solid var(--border-subtle)',
-        display: 'flex',
-        flexDirection: 'column',
-        zIndex: 50,
-        boxShadow: 'var(--shadow-xl)',
-        animation: 'drawerSlideIn 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
-      }}
-    >
-      <style>{`
-        @keyframes drawerSlideIn {
-          from { transform: translateX(100%); }
-          to { transform: translateX(0); }
-        }
-      `}</style>
+    <>
+      {/* Mobile Chat Backdrop */}
+      <div
+        onClick={onClose}
+        style={{
+          position: 'fixed',
+          inset: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.65)',
+          backdropFilter: 'blur(3px)',
+          zIndex: 45,
+        }}
+        className="mobile-only"
+      />
+
+      <div
+        className="chat-drawer"
+        style={{
+          position: 'fixed',
+          top: '56px',
+          right: 0,
+          bottom: 0,
+          width: '420px',
+          maxWidth: '100vw',
+          backgroundColor: 'var(--bg-secondary)',
+          borderLeft: '1px solid var(--border-subtle)',
+          display: 'flex',
+          flexDirection: 'column',
+          zIndex: 50,
+          boxShadow: 'var(--shadow-xl)',
+          animation: 'drawerSlideIn 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+        }}
+      >
+        <style>{`
+          @keyframes drawerSlideIn {
+            from { transform: translateX(100%); }
+            to { transform: translateX(0); }
+          }
+          @media (max-width: 768px) {
+            .chat-drawer {
+              width: 100vw !important;
+              max-width: 100vw !important;
+            }
+          }
+        `}</style>
 
       {/* Drawer Header */}
       <div
@@ -417,5 +438,6 @@ export const ChatDrawer: React.FC<ChatDrawerProps> = ({
         </button>
       </form>
     </div>
+    </>
   );
 };
