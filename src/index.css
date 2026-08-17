@@ -439,3 +439,40 @@ code, pre, .font-mono {
     transform: scale(1) translateY(0);
   }
 }
+
+/* Mobile & Tablet Responsive Media Queries */
+@media (max-width: 768px) {
+  h1 { font-size: 1.25rem; }
+  h2 { font-size: 1.1rem; }
+  h3 { font-size: 1rem; }
+
+  .hide-on-mobile {
+    display: none !important;
+  }
+
+  .mobile-only {
+    display: flex !important;
+  }
+
+  .modal-content {
+    max-height: 95vh;
+    border-radius: var(--radius-lg);
+  }
+
+  .diff-table {
+    font-size: 11px;
+  }
+
+  .diff-line-num {
+    width: 32px;
+    min-width: 32px;
+    font-size: 10px;
+    padding: 0 4px;
+  }
+}
+
+@media (min-width: 769px) {
+  .mobile-only {
+    display: none !important;
+  }
+}

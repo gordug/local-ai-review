@@ -21,6 +21,7 @@ import {
   CheckCircle2,
   Clock,
   Layers,
+  ArrowLeft,
 } from 'lucide-react';
 
 interface IssueExpansionViewProps {
@@ -47,6 +48,7 @@ export const IssueExpansionView: React.FC<IssueExpansionViewProps> = ({
   const [copiedSpec, setCopiedSpec] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [completedSteps, setCompletedSteps] = useState<Record<number, boolean>>({});
+  const [isMobileDetailOpen, setIsMobileDetailOpen] = useState(false);
 
   useEffect(() => {
     fetchIssues();
@@ -62,7 +64,7 @@ export const IssueExpansionView: React.FC<IssueExpansionViewProps> = ({
       const data = await githubClient.getIssues(owner, repo, filterState);
       setIssues(data);
       if (data.length > 0 && !selectedIssue) {
-        handleSelectIssue(data[0]);
+        handleSelectIssue(data[0], false);
       }
     } catch (err: any) {
       console.warn('Failed to load issues from GitHub:', err);
@@ -70,16 +72,19 @@ export const IssueExpansionView: React.FC<IssueExpansionViewProps> = ({
       const demo = getDemoIssues(repoFullName);
       setIssues(demo);
       if (demo.length > 0 && !selectedIssue) {
-        handleSelectIssue(demo[0]);
+        handleSelectIssue(demo[0], false);
       }
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleSelectIssue = async (issue: GitHubIssue) => {
+  const handleSelectIssue = async (issue: GitHubIssue, openMobile = true) => {
     setSelectedIssue(issue);
     setCompletedSteps({});
+    if (openMobile) {
+      setIsMobileDetailOpen(true);
+    }
     const [owner, repo] = repoFullName.split('/');
 
     // Check IndexedDB cache
@@ -175,16 +180,16 @@ export const IssueExpansionView: React.FC<IssueExpansionViewProps> = ({
   });
 
   return (
-    <div style={{ padding: '24px', maxWidth: '1300px', margin: '0 auto', width: '100%' }}>
+    <div style={{ padding: '16px', maxWidth: '1300px', margin: '0 auto', width: '100%' }}>
       {/* Top Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
         <div>
           <h1 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <CheckSquare size={22} style={{ color: 'var(--accent-primary)' }} />
-            <span>Issue Triage & Technical Spec Generator</span>
+            <CheckSquare size={20} style={{ color: 'var(--accent-primary)' }} />
+            <span>Issue Triage & Technical Spec</span>
           </h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '13px', marginTop: '2px' }}>
-            Summarize issues and auto-expand them into comprehensive engineering specifications, task breakdowns, and test plans for <strong>{repoFullName}</strong>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '12px', marginTop: '2px' }}>
+            Summarize issues and auto-expand into specifications for <strong>{repoFullName}</strong>
           </p>
         </div>
 
@@ -194,19 +199,44 @@ export const IssueExpansionView: React.FC<IssueExpansionViewProps> = ({
         </button>
       </div>
 
-      {/* Main Split Layout */}
-      <div style={{ display: 'flex', gap: '16px', minHeight: '650px' }}>
+      <style>{`
+        .issues-layout-container {
+          display: flex;
+          gap: 16px;
+          min-height: 600px;
+        }
+        .issues-sidebar-panel {
+          width: 320px;
+          min-width: 320px;
+        }
+        @media (max-width: 768px) {
+          .issues-layout-container {
+            flex-direction: column;
+            gap: 12px;
+          }
+          .issues-sidebar-panel {
+            width: 100% !important;
+            min-width: 100% !important;
+          }
+          .issues-sidebar-panel.mobile-hidden {
+            display: none !important;
+          }
+          .issues-detail-panel.mobile-hidden {
+            display: none !important;
+          }
+        }
+      `}</style>
+
+      {/* Main Responsive Split/Stack Layout */}
+      <div className="issues-layout-container">
         {/* Left: Issues List */}
         <div
+          className={`issues-sidebar-panel card ${isMobileDetailOpen ? 'mobile-hidden' : ''}`}
           style={{
-            width: '340px',
-            minWidth: '340px',
-            backgroundColor: 'var(--bg-secondary)',
-            border: '1px solid var(--border-subtle)',
-            borderRadius: 'var(--radius-lg)',
+            padding: 0,
+            overflow: 'hidden',
             display: 'flex',
             flexDirection: 'column',
-            overflow: 'hidden',
           }}
         >
           {/* Search and filter */}
@@ -249,7 +279,7 @@ export const IssueExpansionView: React.FC<IssueExpansionViewProps> = ({
           </div>
 
           {/* List items */}
-          <div style={{ flex: 1, overflowY: 'auto', padding: '6px' }}>
+          <div style={{ flex: 1, overflowY: 'auto', padding: '6px', maxHeight: '550px' }}>
             {filteredIssues.length === 0 ? (
               <div style={{ padding: '32px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '12px' }}>
                 No issues found.
@@ -260,7 +290,7 @@ export const IssueExpansionView: React.FC<IssueExpansionViewProps> = ({
                 return (
                   <div
                     key={issue.id}
-                    onClick={() => handleSelectIssue(issue)}
+                    onClick={() => handleSelectIssue(issue, true)}
                     style={{
                       padding: '10px',
                       borderRadius: 'var(--radius-md)',
@@ -301,13 +331,28 @@ export const IssueExpansionView: React.FC<IssueExpansionViewProps> = ({
         </div>
 
         {/* Right: Selected Issue Detail & Technical Spec */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div
+          className={`issues-detail-panel ${!isMobileDetailOpen ? 'mobile-hidden' : ''}`}
+          style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '14px', minWidth: 0 }}
+        >
           {selectedIssue ? (
             <>
+              {/* Mobile Back to List Button */}
+              <div className="mobile-only" style={{ marginBottom: '4px' }}>
+                <button
+                  className="btn btn-ghost btn-sm"
+                  onClick={() => setIsMobileDetailOpen(false)}
+                  style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+                >
+                  <ArrowLeft size={14} />
+                  <span>Back to Issues List</span>
+                </button>
+              </div>
+
               {/* Issue Overview Card */}
-              <div className="card">
-                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
-                  <div style={{ flex: 1 }}>
+              <div className="card" style={{ padding: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '14px', flexWrap: 'wrap' }}>
+                  <div style={{ flex: 1, minWidth: '240px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
                       <span className={`badge ${selectedIssue.state === 'open' ? 'badge-success' : 'badge-neutral'}`}>
                         {selectedIssue.state.toUpperCase()}
@@ -343,18 +388,18 @@ export const IssueExpansionView: React.FC<IssueExpansionViewProps> = ({
                   {/* Actions */}
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
                     <button
-                      className="btn btn-primary"
+                      className="btn btn-primary btn-sm"
                       onClick={handleExpandIssue}
                       disabled={isExpanding}
-                      style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px' }}
+                      style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px' }}
                     >
-                      <Sparkles size={15} className={isExpanding ? 'spin' : ''} />
-                      <span>{isExpanding ? 'Synthesizing Spec...' : spec ? 'Re-Generate Technical Spec' : 'Auto-Expand to Technical Spec'}</span>
+                      <Sparkles size={14} className={isExpanding ? 'spin' : ''} />
+                      <span>{isExpanding ? 'Synthesizing...' : spec ? 'Re-Generate Spec' : 'Auto-Expand to Spec'}</span>
                     </button>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <button className="btn btn-secondary btn-sm" onClick={handleOpenChat}>
                         <MessageSquare size={13} />
-                        <span>Chat on Issue</span>
+                        <span>Chat</span>
                       </button>
                       <a
                         href={selectedIssue.html_url}
@@ -371,34 +416,34 @@ export const IssueExpansionView: React.FC<IssueExpansionViewProps> = ({
 
               {/* Technical Specification Output */}
               {spec ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                   {/* Top Spec Action Bar */}
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span className="badge badge-info" style={{ fontSize: '11px', textTransform: 'uppercase' }}>
+                      <span className="badge badge-info" style={{ fontSize: '10px', textTransform: 'uppercase' }}>
                         Engineering PRD Spec
                       </span>
-                      <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                      <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
                         Model: {spec.model}
                       </span>
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <button className="btn btn-secondary btn-sm" onClick={copySpecMarkdown}>
                         {copiedSpec ? <Check size={12} style={{ color: 'var(--success-text)' }} /> : <Copy size={12} />}
-                        <span>{copiedSpec ? 'Copied' : 'Copy Spec'}</span>
+                        <span>{copiedSpec ? 'Copied' : 'Copy'}</span>
                       </button>
                       <button className="btn btn-secondary btn-sm" onClick={downloadSpec}>
                         <Download size={12} />
-                        <span>Download .md</span>
+                        <span>.md</span>
                       </button>
                     </div>
                   </div>
 
                   {/* Summary & Root Cause */}
-                  <div className="card">
+                  <div className="card" style={{ padding: '16px' }}>
                     <h3 style={{ fontSize: '14px', marginBottom: '6px' }}>Executive Problem Summary</h3>
-                    <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '14px' }}>
+                    <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '12px' }}>
                       {spec.executiveSummary}
                     </p>
 
@@ -411,10 +456,10 @@ export const IssueExpansionView: React.FC<IssueExpansionViewProps> = ({
                   </div>
 
                   {/* Affected Modules */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
-                    <div className="card">
-                      <h4 style={{ fontSize: '13px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <Layers size={15} style={{ color: 'var(--accent-primary)' }} />
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '14px' }}>
+                    <div className="card" style={{ padding: '14px' }}>
+                      <h4 style={{ fontSize: '12px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <Layers size={14} style={{ color: 'var(--accent-primary)' }} />
                         <span>Affected Components</span>
                       </h4>
                       <ul style={{ paddingLeft: '16px', fontSize: '12px', color: 'var(--text-secondary)' }}>
@@ -424,14 +469,14 @@ export const IssueExpansionView: React.FC<IssueExpansionViewProps> = ({
                       </ul>
                     </div>
 
-                    <div className="card">
-                      <h4 style={{ fontSize: '13px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <FileCode size={15} style={{ color: 'var(--info-text)' }} />
+                    <div className="card" style={{ padding: '14px' }}>
+                      <h4 style={{ fontSize: '12px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <FileCode size={14} style={{ color: 'var(--info-text)' }} />
                         <span>Suspected Source Files</span>
                       </h4>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                         {spec.suspectedFiles.map((f, i) => (
-                          <code key={i} style={{ fontSize: '11px', color: 'var(--text-primary)', background: 'var(--bg-tertiary)', padding: '2px 6px', borderRadius: '4px' }}>
+                          <code key={i} style={{ fontSize: '11px', color: 'var(--text-primary)', background: 'var(--bg-tertiary)', padding: '2px 6px', borderRadius: '4px', wordBreak: 'break-all' }}>
                             {f}
                           </code>
                         ))}
@@ -440,10 +485,10 @@ export const IssueExpansionView: React.FC<IssueExpansionViewProps> = ({
                   </div>
 
                   {/* Interactive Implementation Plan Checklist */}
-                  <div className="card">
+                  <div className="card" style={{ padding: '16px' }}>
                     <h3 style={{ fontSize: '14px', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <ListTodo size={16} style={{ color: 'var(--success-text)' }} />
-                      <span>Step-by-Step Implementation Task Checklist</span>
+                      <ListTodo size={15} style={{ color: 'var(--success-text)' }} />
+                      <span>Step-by-Step Task Checklist</span>
                     </h3>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -494,8 +539,8 @@ export const IssueExpansionView: React.FC<IssueExpansionViewProps> = ({
 
                   {/* Suggested Solution Snippet */}
                   {spec.suggestedCodeSolution && (
-                    <div className="card">
-                      <h4 style={{ fontSize: '13px', marginBottom: '8px' }}>Proposed Code Pattern / Solution</h4>
+                    <div className="card" style={{ padding: '16px' }}>
+                      <h4 style={{ fontSize: '13px', marginBottom: '8px' }}>Proposed Code Pattern</h4>
                       <pre
                         style={{
                           padding: '10px 14px',
@@ -513,10 +558,10 @@ export const IssueExpansionView: React.FC<IssueExpansionViewProps> = ({
                   )}
 
                   {/* Acceptance Criteria */}
-                  <div className="card">
+                  <div className="card" style={{ padding: '16px' }}>
                     <h4 style={{ fontSize: '13px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <CheckCircle2 size={15} style={{ color: 'var(--success-text)' }} />
-                      <span>Acceptance Criteria & Test Scenarios</span>
+                      <CheckCircle2 size={14} style={{ color: 'var(--success-text)' }} />
+                      <span>Acceptance Criteria</span>
                     </h4>
                     <ul style={{ paddingLeft: '16px', fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
                       {spec.acceptanceCriteria.map((ac, i) => (
@@ -526,21 +571,21 @@ export const IssueExpansionView: React.FC<IssueExpansionViewProps> = ({
                   </div>
                 </div>
               ) : (
-                <div className="card" style={{ padding: '48px', textAlign: 'center', color: 'var(--text-muted)' }}>
-                  <Sparkles size={36} style={{ margin: '0 auto 12px', color: 'var(--accent-primary)' }} />
+                <div className="card" style={{ padding: '36px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                  <Sparkles size={32} style={{ margin: '0 auto 10px', color: 'var(--accent-primary)' }} />
                   <h3>No Technical Spec Synthesized Yet</h3>
-                  <p style={{ fontSize: '13px', marginTop: '6px', maxWidth: '500px', margin: '6px auto 16px' }}>
-                    Click "Auto-Expand to Technical Spec" to transform this issue into a full technical blueprint with root cause analysis, task checklists, and test cases.
+                  <p style={{ fontSize: '12px', marginTop: '4px', maxWidth: '400px', margin: '4px auto 14px' }}>
+                    Click "Auto-Expand to Spec" to generate root cause hypotheses, task checklists, and test plans.
                   </p>
-                  <button className="btn btn-primary" onClick={handleExpandIssue} disabled={isExpanding}>
-                    <Sparkles size={14} />
+                  <button className="btn btn-primary btn-sm" onClick={handleExpandIssue} disabled={isExpanding}>
+                    <Sparkles size={13} />
                     <span>Generate Technical Spec Now</span>
                   </button>
                 </div>
               )}
             </>
           ) : (
-            <div className="card" style={{ padding: '48px', textAlign: 'center', color: 'var(--text-muted)' }}>
+            <div className="card" style={{ padding: '36px', textAlign: 'center', color: 'var(--text-muted)' }}>
               <p>Select an issue from the list to view and expand it.</p>
             </div>
           )}
@@ -578,12 +623,7 @@ function getDemoIssues(repoFullName: string): GitHubIssue[] {
       id: 201,
       number: 42,
       title: 'Bug: JWT session expired token rotation enters infinite loop on concurrent HTTP requests',
-      body: `When multiple asynchronous API calls are fired simultaneously right as the access token expires, each interceptor triggers a separate rotation request to /api/auth/refresh. The server revokes the old refresh token on the first rotation, causing the remaining concurrent requests to fail with 401 and redirect to logout.
-      
-Steps to reproduce:
-1. Allow access token to expire.
-2. Open dashboard which fires 4 parallel requests (metrics, profile, notifications, settings).
-3. Observe 3 requests fail with 401 and user is ejected from session.`,
+      body: `When multiple asynchronous API calls are fired simultaneously right as the access token expires, each interceptor triggers a separate rotation request to /api/auth/refresh. The server revokes the old refresh token on the first rotation, causing the remaining concurrent requests to fail with 401 and redirect to logout.`,
       state: 'open',
       user: {
         login: 'security-tester',
@@ -601,28 +641,6 @@ Steps to reproduce:
       closed_at: null,
       comments: 3,
       html_url: `https://github.com/${repoFullName}/issues/42`,
-    },
-    {
-      id: 202,
-      number: 37,
-      title: 'Enhancement: Support custom BYOM endpoint headers and fine-grained temperature controls',
-      body: 'Allow users who run self-hosted vLLM or local proxy servers to inject custom Authorization headers, project tags, and tune generation temperature for code review vs conversational queries.',
-      state: 'open',
-      user: {
-        login: 'devops-lead',
-        id: 882,
-        avatar_url: 'https://avatars.githubusercontent.com/u/882?v=4',
-        name: 'DevOps Lead',
-        html_url: '',
-      },
-      labels: [
-        { id: 3, name: 'enhancement', color: 'a2eeef', description: 'Enhancement' },
-      ],
-      created_at: new Date(Date.now() - 3600000 * 72).toISOString(),
-      updated_at: new Date(Date.now() - 3600000 * 12).toISOString(),
-      closed_at: null,
-      comments: 1,
-      html_url: `https://github.com/${repoFullName}/issues/37`,
     },
   ];
 }

@@ -26,11 +26,10 @@ interface DiffViewerProps {
 export const DiffViewer: React.FC<DiffViewerProps> = ({
   files,
   lineComments = [],
-  defaultViewMode = 'split',
+  defaultViewMode = 'unified',
 }) => {
   const [viewMode, setViewMode] = useState<'unified' | 'split'>(defaultViewMode);
   const [selectedFileIndex, setSelectedFileIndex] = useState<number>(0);
-  const [collapsedFiles, setCollapsedFiles] = useState<Record<string, boolean>>({});
   const [copiedCommentId, setCopiedCommentId] = useState<string | null>(null);
 
   if (!files || files.length === 0) {
@@ -43,10 +42,6 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({
   }
 
   const activeFile = files[selectedFileIndex] || files[0];
-
-  const toggleFileCollapse = (filename: string) => {
-    setCollapsedFiles((prev) => ({ ...prev, [filename]: !prev[filename] }));
-  };
 
   const copyComment = (id: string, text: string) => {
     navigator.clipboard.writeText(text);
@@ -62,12 +57,40 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({
   };
 
   return (
-    <div style={{ display: 'flex', gap: '16px', height: '100%', minHeight: '500px' }}>
+    <div className="diff-viewer-wrapper">
+      <style>{`
+        .diff-viewer-wrapper {
+          display: flex;
+          gap: 16px;
+          min-height: 500px;
+        }
+        .diff-file-sidebar {
+          width: 260px;
+          min-width: 260px;
+        }
+        .diff-main-content {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          min-width: 0;
+        }
+        @media (max-width: 768px) {
+          .diff-viewer-wrapper {
+            flex-direction: column;
+            gap: 12px;
+          }
+          .diff-file-sidebar {
+            width: 100% !important;
+            min-width: 100% !important;
+            max-height: 160px;
+          }
+        }
+      `}</style>
+
       {/* File Tree / Sidebar */}
       <div
+        className="diff-file-sidebar"
         style={{
-          width: '260px',
-          minWidth: '260px',
           backgroundColor: 'var(--bg-secondary)',
           border: '1px solid var(--border-subtle)',
           borderRadius: 'var(--radius-lg)',
@@ -89,7 +112,7 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({
             justifyContent: 'space-between',
           }}
         >
-          <span>CHANGED FILES ({files.length})</span>
+          <span>FILES ({files.length})</span>
         </div>
 
         <div style={{ flex: 1, overflowY: 'auto', padding: '6px' }}>
@@ -116,7 +139,7 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden' }}>
-                  <FileCode size={14} style={{ color: isSelected ? 'var(--accent-primary)' : 'var(--text-muted)' }} />
+                  <FileCode size={14} style={{ color: isSelected ? 'var(--accent-primary)' : 'var(--text-muted)', flexShrink: 0 }} />
                   <span
                     style={{
                       fontWeight: isSelected ? 600 : 400,
@@ -150,21 +173,34 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({
       </div>
 
       {/* Main Diff Content */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <div className="diff-main-content">
         {/* Controls Bar */}
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            marginBottom: '12px',
+            marginBottom: '10px',
+            flexWrap: 'wrap',
+            gap: '8px',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
+            <span
+              style={{
+                fontSize: '13px',
+                fontWeight: 600,
+                color: 'var(--text-primary)',
+                fontFamily: 'var(--font-mono)',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+              title={activeFile.filename}
+            >
               {activeFile.filename}
             </span>
-            <span className={`badge ${activeFile.status === 'added' ? 'badge-success' : activeFile.status === 'removed' ? 'badge-danger' : 'badge-neutral'}`}>
+            <span className={`badge ${activeFile.status === 'added' ? 'badge-success' : activeFile.status === 'removed' ? 'badge-danger' : 'badge-neutral'}`} style={{ fontSize: '10px' }}>
               {activeFile.status}
             </span>
           </div>
@@ -180,21 +216,21 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({
               }}
             >
               <button
-                className={`btn btn-sm ${viewMode === 'split' ? 'btn-secondary' : 'btn-ghost'}`}
-                style={{ padding: '3px 8px', fontSize: '12px' }}
+                className={`btn btn-sm hide-on-mobile ${viewMode === 'split' ? 'btn-secondary' : 'btn-ghost'}`}
+                style={{ padding: '3px 8px', fontSize: '11px' }}
                 onClick={() => setViewMode('split')}
                 title="Split side-by-side diff"
               >
-                <Columns size={13} />
+                <Columns size={12} />
                 <span>Split</span>
               </button>
               <button
                 className={`btn btn-sm ${viewMode === 'unified' ? 'btn-secondary' : 'btn-ghost'}`}
-                style={{ padding: '3px 8px', fontSize: '12px' }}
+                style={{ padding: '3px 8px', fontSize: '11px' }}
                 onClick={() => setViewMode('unified')}
                 title="Unified diff"
               >
-                <AlignLeft size={13} />
+                <AlignLeft size={12} />
                 <span>Unified</span>
               </button>
             </div>
@@ -205,10 +241,12 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({
         <div
           style={{
             flex: 1,
+            overflowX: 'auto',
             overflowY: 'auto',
             backgroundColor: 'var(--bg-secondary)',
             border: '1px solid var(--border-subtle)',
             borderRadius: 'var(--radius-lg)',
+            WebkitOverflowScrolling: 'touch',
           }}
         >
           {activeFile.hunks.length === 0 ? (
@@ -217,7 +255,7 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({
             </div>
           ) : (
             activeFile.hunks.map((hunk, hunkIdx) => (
-              <div key={hunkIdx} style={{ marginBottom: '8px' }}>
+              <div key={hunkIdx} style={{ marginBottom: '6px' }}>
                 <div className="diff-line-hunk">{hunk.header}</div>
 
                 {viewMode === 'unified' ? (
@@ -337,16 +375,16 @@ const InlineCommentCard: React.FC<InlineCommentCardProps> = ({ comment, onCopy, 
   return (
     <div
       style={{
-        margin: '6px 16px',
-        padding: '10px 14px',
+        margin: '6px 12px',
+        padding: '10px 12px',
         borderRadius: 'var(--radius-md)',
         backgroundColor: isCritical ? 'rgba(239, 68, 68, 0.08)' : 'var(--bg-tertiary)',
         border: `1px solid ${isCritical ? 'var(--danger-border)' : 'var(--border-default)'}`,
         fontSize: '12px',
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px', flexWrap: 'wrap', gap: '6px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           {isCritical ? (
             <ShieldAlert size={14} style={{ color: 'var(--danger-text)' }} />
           ) : (

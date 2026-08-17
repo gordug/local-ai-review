@@ -13,6 +13,8 @@ import {
   ChevronDown,
   Activity,
   Cpu,
+  Menu,
+  X,
 } from 'lucide-react';
 import { GithubIcon } from '../common/Icons';
 import { AppSettings } from '../../types/storage';
@@ -29,6 +31,8 @@ interface HeaderProps {
   currentUser: GitHubUser | null;
   rateLimit: GitHubRateLimit | null;
   onRefreshRateLimit: () => void;
+  onToggleMobileSidebar?: () => void;
+  isMobileSidebarOpen?: boolean;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -39,6 +43,8 @@ export const Header: React.FC<HeaderProps> = ({
   isChatOpen,
   currentUser,
   rateLimit,
+  onToggleMobileSidebar,
+  isMobileSidebarOpen = false,
 }) => {
   const [isRepoDropdownOpen, setIsRepoDropdownOpen] = useState(false);
   const [repoSearchInput, setRepoSearchInput] = useState('');
@@ -92,20 +98,31 @@ export const Header: React.FC<HeaderProps> = ({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: '0 16px',
+        padding: '0 12px',
         backgroundColor: 'var(--bg-secondary)',
         borderBottom: '1px solid var(--border-subtle)',
         position: 'relative',
         zIndex: 40,
       }}
     >
-      {/* Brand & Repo Selector */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+      {/* Left: Mobile Menu Toggle + Brand & Repo Selector */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        {onToggleMobileSidebar && (
+          <button
+            className="btn btn-ghost btn-sm mobile-only"
+            onClick={onToggleMobileSidebar}
+            title="Toggle Navigation Menu"
+            style={{ padding: '6px' }}
+          >
+            {isMobileSidebarOpen ? <X size={18} /> : <Menu size={18} />}
+          </button>
+        )}
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <div
             style={{
-              width: '32px',
-              height: '32px',
+              width: '28px',
+              height: '28px',
               borderRadius: 'var(--radius-md)',
               background: 'linear-gradient(135deg, #2563eb, #3b82f6)',
               display: 'flex',
@@ -113,46 +130,55 @@ export const Header: React.FC<HeaderProps> = ({
               justifyContent: 'center',
               color: '#ffffff',
               boxShadow: 'var(--shadow-sm)',
+              flexShrink: 0,
             }}
           >
-            <Code2 size={20} />
+            <Code2 size={16} />
           </div>
-          <div>
+          <div className="hide-on-mobile">
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ fontWeight: 700, fontSize: '15px', color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
+              <span style={{ fontWeight: 700, fontSize: '14px', color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
                 RevFlow
               </span>
               <span
                 style={{
-                  fontSize: '10px',
+                  fontSize: '9px',
                   fontWeight: 600,
-                  padding: '1px 6px',
+                  padding: '1px 5px',
                   borderRadius: '4px',
                   backgroundColor: 'var(--success-bg)',
                   color: 'var(--success-text)',
                   border: '1px solid var(--success-border)',
                 }}
               >
-                Local-First
+                Local
               </span>
             </div>
           </div>
         </div>
 
-        <div style={{ height: '20px', width: '1px', backgroundColor: 'var(--border-subtle)' }} />
+        <div className="hide-on-mobile" style={{ height: '18px', width: '1px', backgroundColor: 'var(--border-subtle)' }} />
 
         {/* Active Repo Selector Dropdown */}
         <div style={{ position: 'relative' }}>
           <button
             className="btn btn-secondary"
-            style={{ padding: '5px 10px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}
+            style={{ padding: '4px 8px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '5px' }}
             onClick={() => setIsRepoDropdownOpen(!isRepoDropdownOpen)}
           >
-            <GithubIcon size={15} style={{ color: 'var(--text-muted)' }} />
-            <span style={{ fontWeight: 600, maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {settings.activeRepo || 'Select Repository'}
+            <GithubIcon size={14} style={{ color: 'var(--text-muted)' }} />
+            <span
+              style={{
+                fontWeight: 600,
+                maxWidth: '130px',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {settings.activeRepo || 'Select Repo'}
             </span>
-            <ChevronDown size={14} style={{ color: 'var(--text-muted)' }} />
+            <ChevronDown size={13} style={{ color: 'var(--text-muted)' }} />
           </button>
 
           {isRepoDropdownOpen && (
@@ -162,7 +188,8 @@ export const Header: React.FC<HeaderProps> = ({
                 top: '100%',
                 left: 0,
                 marginTop: '6px',
-                width: '320px',
+                width: '300px',
+                maxWidth: '90vw',
                 backgroundColor: 'var(--bg-secondary)',
                 border: '1px solid var(--border-default)',
                 borderRadius: 'var(--radius-lg)',
@@ -247,29 +274,29 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
       </div>
 
-      {/* Center / Right controls */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+      {/* Right controls */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
         {/* Active AI Model Badge & Quick Selector */}
         <div
           onClick={() => onOpenSettings('ai')}
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '6px',
-            padding: '4px 10px',
+            gap: '4px',
+            padding: '4px 8px',
             borderRadius: 'var(--radius-md)',
             backgroundColor: 'var(--bg-tertiary)',
             border: '1px solid var(--border-subtle)',
-            fontSize: '12px',
+            fontSize: '11px',
             cursor: 'pointer',
           }}
           title="Click to configure AI providers"
         >
-          <Cpu size={14} style={{ color: 'var(--accent-primary)' }} />
-          <span style={{ color: 'var(--text-secondary)' }}>Model:</span>
-          <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
+          <Cpu size={13} style={{ color: 'var(--accent-primary)' }} />
+          <span className="hide-on-mobile" style={{ color: 'var(--text-secondary)' }}>Model:</span>
+          <span style={{ fontWeight: 600, color: 'var(--text-primary)', maxWidth: '100px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {settings.activeProvider === 'deterministic'
-              ? '$0 Deterministic AST'
+              ? 'AST ($0)'
               : settings.providers[settings.activeProvider]?.model || settings.activeProvider}
           </span>
         </div>
@@ -277,20 +304,21 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Rate Limit Tracker */}
         {rateLimit && (
           <div
+            className="hide-on-mobile"
             style={{
               display: 'flex',
               alignItems: 'center',
               gap: '4px',
               fontSize: '11px',
               color: 'var(--text-muted)',
-              padding: '4px 8px',
+              padding: '4px 6px',
               borderRadius: 'var(--radius-sm)',
               backgroundColor: 'var(--bg-tertiary)',
             }}
-            title={`GitHub API Calls: ${rateLimit.remaining} of ${rateLimit.limit} remaining`}
+            title={`GitHub API: ${rateLimit.remaining} of ${rateLimit.limit} reqs remaining`}
           >
             <Activity size={12} style={{ color: rateLimit.remaining < 100 ? 'var(--warning-text)' : 'var(--success-text)' }} />
-            <span>{rateLimit.remaining} reqs</span>
+            <span>{rateLimit.remaining}</span>
           </div>
         )}
 
@@ -301,8 +329,8 @@ export const Header: React.FC<HeaderProps> = ({
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '8px',
-              padding: '3px 8px',
+              gap: '6px',
+              padding: '3px 6px',
               borderRadius: 'var(--radius-md)',
               cursor: 'pointer',
               border: '1px solid var(--border-subtle)',
@@ -313,18 +341,19 @@ export const Header: React.FC<HeaderProps> = ({
             <img
               src={currentUser.avatar_url}
               alt={currentUser.login}
-              style={{ width: '22px', height: '22px', borderRadius: '50%' }}
+              style={{ width: '20px', height: '20px', borderRadius: '50%' }}
             />
-            <span style={{ fontSize: '12px', fontWeight: 600 }}>@{currentUser.login}</span>
+            <span className="hide-on-mobile" style={{ fontSize: '11px', fontWeight: 600 }}>@{currentUser.login}</span>
           </div>
         ) : (
           <button
             className="btn btn-secondary btn-sm"
             onClick={() => onOpenSettings('github')}
-            style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+            style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 6px' }}
+            title="Connect GitHub Personal Access Token"
           >
-            <Key size={13} style={{ color: 'var(--warning-text)' }} />
-            <span>Connect GitHub</span>
+            <Key size={12} style={{ color: 'var(--warning-text)' }} />
+            <span className="hide-on-mobile">Connect</span>
           </button>
         )}
 
@@ -333,19 +362,20 @@ export const Header: React.FC<HeaderProps> = ({
           className={`btn ${isChatOpen ? 'btn-primary' : 'btn-secondary'} btn-sm`}
           onClick={onToggleChat}
           title="Toggle Context-Aware AI Chat"
+          style={{ padding: '4px 8px' }}
         >
-          <MessageSquare size={14} />
-          <span>AI Chat</span>
+          <MessageSquare size={13} />
+          <span className="hide-on-mobile">Chat</span>
         </button>
 
         {/* Theme Toggle */}
-        <button className="btn btn-ghost btn-sm" onClick={toggleTheme} title="Toggle Dark/Light Theme">
-          {settings.theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
+        <button className="btn btn-ghost btn-sm" onClick={toggleTheme} title="Toggle Theme" style={{ padding: '4px' }}>
+          {settings.theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
         </button>
 
         {/* Settings Button */}
-        <button className="btn btn-ghost btn-sm" onClick={() => onOpenSettings()} title="Settings">
-          <Settings size={15} />
+        <button className="btn btn-ghost btn-sm" onClick={() => onOpenSettings()} title="Settings" style={{ padding: '4px' }}>
+          <Settings size={14} />
         </button>
       </div>
     </header>

@@ -30,6 +30,7 @@ export const App: React.FC = () => {
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [settingsInitialTab, setSettingsInitialTab] = useState<string>('github');
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   // Load initial settings and check auth
   useEffect(() => {
@@ -104,6 +105,7 @@ export const App: React.FC = () => {
     if (tab === 'prs') {
       setSelectedPR(null);
     }
+    setIsMobileSidebarOpen(false);
   };
 
   if (!isLoaded) {
@@ -129,18 +131,22 @@ export const App: React.FC = () => {
           const rl = await githubAuth.getRateLimit(settings.githubToken);
           if (rl) setRateLimit(rl);
         }}
+        onToggleMobileSidebar={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
+        isMobileSidebarOpen={isMobileSidebarOpen}
       />
 
       {/* Main Workspace Layout */}
-      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+      <div style={{ display: 'flex', flex: 1, overflow: 'hidden', position: 'relative' }}>
         {/* Navigation Sidebar */}
         <Sidebar
           activeTab={activeTab}
           onTabChange={handleTabChange}
+          isMobileOpen={isMobileSidebarOpen}
+          onCloseMobile={() => setIsMobileSidebarOpen(false)}
         />
 
         {/* Dynamic View Panel */}
-        <main style={{ flex: 1, overflowY: 'auto', backgroundColor: 'var(--bg-primary)' }}>
+        <main style={{ flex: 1, overflowY: 'auto', backgroundColor: 'var(--bg-primary)', minWidth: 0 }}>
           {activeTab === 'prs' && (
             selectedPR ? (
               <PRDetailView
@@ -163,7 +169,7 @@ export const App: React.FC = () => {
             <BranchCompareView
               repoFullName={settings.activeRepo}
               settings={settings}
-              onOpenChatWithContext={handleOpenChatWithContext}
+              onOpenChatWithContext={(prompt, compareId) => handleOpenChatWithContext(prompt, compareId)}
             />
           )}
 
@@ -172,36 +178,14 @@ export const App: React.FC = () => {
               repoFullName={settings.activeRepo}
               settings={settings}
               onOpenChatWithContext={handleOpenChatWithContext}
-              onOpenSettings={() => handleOpenSettings('github')}
+              onOpenSettings={() => handleOpenSettings('ai')}
             />
           )}
 
           {activeTab === 'saved-reviews' && (
             <SavedReviewsView
               repoFullName={settings.activeRepo}
-              onOpenPRReview={(savedReview) => {
-                // Synthesize PR object from saved review
-                const pseudoPR: GitHubPR = {
-                  id: savedReview.prNumber || 1,
-                  number: savedReview.prNumber || 1,
-                  title: `PR #${savedReview.prNumber || 1} (Cached Review)`,
-                  body: savedReview.report.executiveSummary,
-                  state: 'open',
-                  merged_at: null,
-                  created_at: new Date(savedReview.savedAt).toISOString(),
-                  updated_at: new Date(savedReview.savedAt).toISOString(),
-                  html_url: `https://github.com/${savedReview.repoFullName}/pull/${savedReview.prNumber || 1}`,
-                  user: {
-                    login: 'developer',
-                    id: 1,
-                    avatar_url: 'https://avatars.githubusercontent.com/u/1?v=4',
-                    name: 'Developer',
-                    html_url: '',
-                  },
-                  head: { ref: 'feature-branch', sha: savedReview.commitSha || '1234567', label: 'feature', repo: null },
-                  base: { ref: 'main', sha: 'main', label: 'main', repo: {} as any },
-                };
-                setSelectedPR(pseudoPR);
+              onOpenPRReview={(cached) => {
                 setActiveTab('prs');
               }}
             />
@@ -216,7 +200,7 @@ export const App: React.FC = () => {
           )}
         </main>
 
-        {/* Context-Aware Conversational AI Drawer */}
+        {/* AI Chat Drawer */}
         <ChatDrawer
           isOpen={isChatOpen}
           onClose={() => setIsChatOpen(false)}
@@ -227,19 +211,13 @@ export const App: React.FC = () => {
         />
       </div>
 
-      {/* Settings & BYOM Configuration Modal */}
+      {/* Settings Modal */}
       <SettingsModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
         settings={settings}
         onSaveSettings={handleUpdateSettings}
         initialTab={settingsInitialTab}
-        onAuthSuccess={async () => {
-          const authRes = await githubAuth.validateToken(settings.githubToken);
-          if (authRes.valid && authRes.user) {
-            setCurrentUser(authRes.user);
-          }
-        }}
       />
     </div>
   );
