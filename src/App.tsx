@@ -155,6 +155,7 @@ export const App: React.FC = () => {
                 settings={settings}
                 onBack={handleBackToPRList}
                 onOpenChatWithContext={handleOpenChatWithContext}
+                onOpenSettings={() => handleOpenSettings('github')}
               />
             ) : (
               <PRListView

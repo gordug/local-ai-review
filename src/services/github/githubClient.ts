@@ -98,6 +98,18 @@ export class GitHubClient {
     return this.request<GitHubCommit[]>(`/repos/${owner}/${repo}/pulls/${pullNumber}/commits?per_page=50`);
   }
 
+  async submitPRReview(
+    owner: string,
+    repo: string,
+    pullNumber: number,
+    payload: import('../../types/github').GitHubReviewSubmissionPayload
+  ): Promise<import('../../types/github').GitHubReviewResponse> {
+    return this.request<import('../../types/github').GitHubReviewResponse>(`/repos/${owner}/${repo}/pulls/${pullNumber}/reviews`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  }
+
   // --- Branches & Comparisons ---
   async getBranches(owner: string, repo: string): Promise<GitHubBranch[]> {
     return this.request<GitHubBranch[]>(`/repos/${owner}/${repo}/branches?per_page=100`);

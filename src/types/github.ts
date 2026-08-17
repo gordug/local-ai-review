@@ -168,6 +168,29 @@ export interface GitHubIssueComment {
   html_url: string;
 }
 
+export interface GitHubReviewSubmissionComment {
+  path: string;
+  line: number;
+  side?: 'LEFT' | 'RIGHT';
+  body: string;
+}
+
+export interface GitHubReviewSubmissionPayload {
+  commit_id?: string;
+  body: string;
+  event: 'APPROVE' | 'REQUEST_CHANGES' | 'COMMENT';
+  comments?: GitHubReviewSubmissionComment[];
+}
+
+export interface GitHubReviewResponse {
+  id: number;
+  user: GitHubUser;
+  body: string;
+  state: 'APPROVED' | 'CHANGES_REQUESTED' | 'COMMENTED' | 'DISMISSED';
+  html_url: string;
+  submitted_at: string;
+}
+
 export interface GitHubRateLimit {
   limit: number;
   remaining: number;
