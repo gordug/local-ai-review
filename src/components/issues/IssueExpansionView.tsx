@@ -386,30 +386,36 @@ export const IssueExpansionView: React.FC<IssueExpansionViewProps> = ({
                   </div>
 
                   {/* Actions */}
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                     <button
                       className="btn btn-primary btn-sm"
                       onClick={handleExpandIssue}
                       disabled={isExpanding}
-                      style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px' }}
+                      style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', cursor: isExpanding ? 'not-allowed' : 'pointer' }}
                     >
                       <Sparkles size={14} className={isExpanding ? 'spin' : ''} />
                       <span>{isExpanding ? 'Synthesizing...' : spec ? 'Re-Generate Spec' : 'Auto-Expand to Spec'}</span>
                     </button>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <button className="btn btn-secondary btn-sm" onClick={handleOpenChat}>
-                        <MessageSquare size={13} />
-                        <span>Chat</span>
-                      </button>
-                      <a
-                        href={selectedIssue.html_url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="btn btn-ghost btn-sm"
-                      >
-                        <ExternalLink size={13} />
-                      </a>
-                    </div>
+                    <button
+                      className="btn btn-secondary btn-sm"
+                      onClick={handleOpenChat}
+                      style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}
+                      title="Chat about this issue"
+                    >
+                      <MessageSquare size={13} />
+                      <span className="hide-on-compact">Chat</span>
+                    </button>
+                    <a
+                      href={selectedIssue.html_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="btn btn-ghost btn-sm"
+                      style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}
+                      title="View issue on GitHub"
+                    >
+                      <span className="hide-on-compact">GitHub</span>
+                      <ExternalLink size={13} />
+                    </a>
                   </div>
                 </div>
               </div>

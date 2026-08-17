@@ -182,9 +182,9 @@ export const PRDetailView: React.FC<PRDetailViewProps> = ({
         </button>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <button className="btn btn-secondary btn-sm" onClick={handleOpenChat}>
+          <button className="btn btn-secondary btn-sm" onClick={handleOpenChat} title="Chat about this PR">
             <MessageSquare size={14} />
-            <span>Chat about this PR</span>
+            <span className="hide-on-compact">Chat about this PR</span>
           </button>
           <a
             href={pr.html_url}
@@ -192,8 +192,9 @@ export const PRDetailView: React.FC<PRDetailViewProps> = ({
             rel="noreferrer"
             className="btn btn-ghost btn-sm"
             style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+            title="Open on GitHub"
           >
-            <span>GitHub PR #{pr.number}</span>
+            <span className="hide-on-compact">GitHub PR #{pr.number}</span>
             <ExternalLink size={13} />
           </a>
         </div>
