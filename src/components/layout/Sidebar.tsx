@@ -77,7 +77,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             inset: 0,
             backgroundColor: 'rgba(0, 0, 0, 0.65)',
             backdropFilter: 'blur(3px)',
-            zIndex: 45,
+            zIndex: 75,
           }}
           className="mobile-only"
         />
@@ -104,9 +104,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
               top: 56px;
               left: 0;
               bottom: 0;
-              z-index: 50;
-              width: 250px !important;
-              min-width: 250px !important;
+              z-index: 80 !important;
+              width: 260px !important;
+              min-width: 260px !important;
               box-shadow: var(--shadow-xl);
               transform: translateX(-100%);
             }

@@ -89,7 +89,24 @@ export const App: React.FC = () => {
   const handleOpenChatWithContext = (prompt: string, contextId: string | number) => {
     setChatContextPrompt(prompt);
     setChatContextId(contextId);
+    setIsMobileSidebarOpen(false);
     setIsChatOpen(true);
+  };
+
+  const handleToggleChat = () => {
+    setIsChatOpen((prev) => {
+      const next = !prev;
+      if (next) setIsMobileSidebarOpen(false);
+      return next;
+    });
+  };
+
+  const handleToggleMobileSidebar = () => {
+    setIsMobileSidebarOpen((prev) => {
+      const next = !prev;
+      if (next) setIsChatOpen(false);
+      return next;
+    });
   };
 
   const handleSelectPR = (pr: GitHubPR) => {
@@ -123,7 +140,7 @@ export const App: React.FC = () => {
         settings={settings}
         onUpdateSettings={handleUpdateSettings}
         onOpenSettings={handleOpenSettings}
-        onToggleChat={() => setIsChatOpen(!isChatOpen)}
+        onToggleChat={handleToggleChat}
         isChatOpen={isChatOpen}
         currentUser={currentUser}
         rateLimit={rateLimit}
@@ -131,7 +148,7 @@ export const App: React.FC = () => {
           const rl = await githubAuth.getRateLimit(settings.githubToken);
           if (rl) setRateLimit(rl);
         }}
-        onToggleMobileSidebar={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
+        onToggleMobileSidebar={handleToggleMobileSidebar}
         isMobileSidebarOpen={isMobileSidebarOpen}
       />
 
