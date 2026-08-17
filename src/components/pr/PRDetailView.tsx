@@ -8,6 +8,7 @@ import { aiRouter } from '../../services/ai/aiRouter';
 import { localDb } from '../../services/storage/localDb';
 import { DiffViewer } from './DiffViewer';
 import { AIReviewReportView } from './AIReviewReportView';
+import { SubmitReviewModal } from './SubmitReviewModal';
 import { RiskBadge, ReadinessScore } from '../common/RiskGauge';
 import {
   ArrowLeft,
@@ -22,6 +23,7 @@ import {
   ChevronDown,
   ChevronUp,
   FileText,
+  Send,
 } from 'lucide-react';
 
 interface PRDetailViewProps {
@@ -30,6 +32,7 @@ interface PRDetailViewProps {
   settings: AppSettings;
   onBack: () => void;
   onOpenChatWithContext: (contextPrompt: string, prId: number) => void;
+  onOpenSettings?: () => void;
 }
 
 export const PRDetailView: React.FC<PRDetailViewProps> = ({
@@ -38,6 +41,7 @@ export const PRDetailView: React.FC<PRDetailViewProps> = ({
   settings,
   onBack,
   onOpenChatWithContext,
+  onOpenSettings = () => {},
 }) => {
   const [activeTab, setActiveTab] = useState<'diff' | 'review' | 'commits'>('diff');
   const [diffFiles, setDiffFiles] = useState<ParsedFileDiff[]>([]);
@@ -47,6 +51,7 @@ export const PRDetailView: React.FC<PRDetailViewProps> = ({
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
+  const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
 
   useEffect(() => {
     loadPRData();
@@ -364,7 +369,10 @@ export const PRDetailView: React.FC<PRDetailViewProps> = ({
 
           {activeTab === 'review' && (
             reviewReport ? (
-              <AIReviewReportView report={reviewReport} />
+              <AIReviewReportView
+                report={reviewReport}
+                onOpenSubmitModal={() => setIsSubmitModalOpen(true)}
+              />
             ) : (
               <div className="card" style={{ padding: '48px', textAlign: 'center', color: 'var(--text-muted)' }}>
                 <Sparkles size={36} style={{ margin: '0 auto 12px', color: 'var(--accent-primary)' }} />
@@ -417,6 +425,19 @@ export const PRDetailView: React.FC<PRDetailViewProps> = ({
             </div>
           )}
         </>
+      )}
+
+      {/* GitHub Review Submission Modal */}
+      {reviewReport && (
+        <SubmitReviewModal
+          isOpen={isSubmitModalOpen}
+          onClose={() => setIsSubmitModalOpen(false)}
+          pr={pr}
+          repoFullName={repoFullName}
+          report={reviewReport}
+          githubToken={settings.githubToken}
+          onOpenSettings={onOpenSettings}
+        />
       )}
     </div>
   );

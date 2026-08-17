@@ -15,14 +15,20 @@ import {
   Cpu,
   Layers,
   Sparkles,
+  Send,
 } from 'lucide-react';
 
 interface AIReviewReportViewProps {
   report: AIReviewReport;
   onExportMarkdown?: () => void;
+  onOpenSubmitModal?: () => void;
 }
 
-export const AIReviewReportView: React.FC<AIReviewReportViewProps> = ({ report, onExportMarkdown }) => {
+export const AIReviewReportView: React.FC<AIReviewReportViewProps> = ({
+  report,
+  onExportMarkdown,
+  onOpenSubmitModal,
+}) => {
   const [copiedPatchIdx, setCopiedPatchIdx] = useState<number | null>(null);
   const [copiedReport, setCopiedReport] = useState(false);
 
@@ -85,13 +91,24 @@ export const AIReviewReportView: React.FC<AIReviewReportViewProps> = ({ report, 
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {onOpenSubmitModal && (
+              <button
+                className="btn btn-primary btn-sm"
+                onClick={onOpenSubmitModal}
+                style={{ display: 'flex', alignItems: 'center', gap: '5px' }}
+                title="Post structured AI review to GitHub"
+              >
+                <Send size={13} />
+                <span>Submit to GitHub</span>
+              </button>
+            )}
             <button className="btn btn-secondary btn-sm" onClick={copyFullMarkdown}>
               {copiedReport ? <Check size={13} style={{ color: 'var(--success-text)' }} /> : <Copy size={13} />}
-              <span>{copiedReport ? 'Copied' : 'Copy Report'}</span>
+              <span className="hide-on-compact">{copiedReport ? 'Copied' : 'Copy Report'}</span>
             </button>
-            <button className="btn btn-secondary btn-sm" onClick={downloadMarkdown}>
+            <button className="btn btn-secondary btn-sm" onClick={downloadMarkdown} title="Download .md report">
               <Download size={13} />
-              <span>Download .md</span>
+              <span className="hide-on-compact">Download .md</span>
             </button>
           </div>
         </div>
