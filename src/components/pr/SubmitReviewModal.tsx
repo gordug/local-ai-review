@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
 import { GitHubPR, GitHubReviewSubmissionPayload, GitHubReviewResponse } from '../../types/github';
-import { AIReviewReport, LineReviewComment } from '../../types/ai';
+import { AIReviewReport } from '../../types/ai';
 import { githubClient } from '../../services/github/githubClient';
 import {
   X,
   Send,
   CheckCircle2,
-  AlertTriangle,
   MessageSquare,
   ShieldCheck,
   ShieldAlert,
@@ -14,7 +13,6 @@ import {
   Copy,
   Check,
   Key,
-  FileCode,
 } from 'lucide-react';
 
 interface SubmitReviewModalProps {
