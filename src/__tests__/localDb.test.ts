@@ -59,7 +59,7 @@ vi.mock('idb', () => ({
 }));
 
 // Import after mocking
-import { LocalDatabaseService } from '../services/storage/localDb';
+import { LocalDatabaseService } from '../internal/localDb';
 import { DEFAULT_SETTINGS } from '../services/storage/localDb';
 import type { CachedPRReview, CachedBranchCompare, CachedIssueSpec } from '../types/storage';
 import type { AIReviewReport, BranchMergeAnalysis, IssueTechnicalSpec } from '../types/ai';
