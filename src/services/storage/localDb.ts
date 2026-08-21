@@ -122,7 +122,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
   syntaxTheme: 'dracula',
 };
 
-class LocalDatabaseService {
+/** @internal Exported for testing only — not part of the public API. */
+export class LocalDatabaseService {
   private dbPromise: Promise<IDBPDatabase<RevFlowDB>> | null = null;
 
   private async getDB(): Promise<IDBPDatabase<RevFlowDB>> {
