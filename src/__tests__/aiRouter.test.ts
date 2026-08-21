@@ -207,7 +207,7 @@ describe('AIRouter – chat deterministic mode', () => {
 
   it('returns a deterministic response string when no provider is configured', async () => {
     const settings = makeSettings({ activeProvider: 'deterministic' });
-    const result = await router.chat(settings, [{ role: 'user', content: 'Hello' }]);
+    const result = await router.chat(settings, [{ id: '1', role: 'user', content: 'Hello', timestamp: 0 }]);
 
     expect(typeof result).toBe('string');
     expect(result).toContain('Deterministic Local Mode');
@@ -225,7 +225,7 @@ describe('AIRouter – chat deterministic mode', () => {
       },
     });
 
-    const result = await router.chat(settings, [{ role: 'user', content: 'Hello' }]);
+    const result = await router.chat(settings, [{ id: '2', role: 'user', content: 'Hello', timestamp: 0 }]);
 
     expect(result).toContain('AI Chat Error');
     expect(result).toContain('gemini');
